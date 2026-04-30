@@ -218,7 +218,65 @@ Common parameter types:
 - `[pscredential]` - Credentials
 - `[datetime]` - Dates and times
 - `[System.IO.FileInfo]` - File objects
+- `[System.IO.DirectoryInfo]` - Directory objects
 - Custom types - Classes or specific object types
+
+### Prefer FileInfo/DirectoryInfo over string paths
+- Use `[System.IO.FileInfo]` for file path parameters instead of `[string]`.
+- Use `[System.IO.DirectoryInfo]` for directory path parameters instead of `[string]`.
+- FileInfo and DirectoryInfo objects provide metadata and methods without extra parsing.
+- PowerShell automatically converts string literals to these types.
+
+Preferred (FileInfo for file paths):
+```powershell
+function Read-ConfigFile
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[System.IO.FileInfo]$ConfigPath
+	)
+
+	if (-not $ConfigPath.Exists)
+	{
+		throw "File not found: $($ConfigPath.FullName)"
+	}
+
+	$ConfigPath.FullName                # Full path
+	$ConfigPath.DirectoryName            # Parent directory
+	$ConfigPath.Name                     # File name only
+	$ConfigPath.LastWriteTime            # Metadata available
+	Get-Content -Path $ConfigPath        # Still works with string-accepting cmdlets
+}
+```
+
+Less ideal (string path):
+```powershell
+function Read-ConfigFile
+{
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[string]$ConfigPath   # Just a string; need to check existence and parse manually
+	)
+
+	if (-not (Test-Path -Path $ConfigPath))
+	{
+		throw "File not found: $ConfigPath"
+	}
+
+	# Must parse the string to get directory, name, etc.
+	[System.IO.Path]::GetDirectoryName($ConfigPath)
+	[System.IO.Path]::GetFileName($ConfigPath)
+}
+```
+
+Benefits:
+- **Type safety**: Parameter is validated as a real file/directory object
+- **Metadata access**: Properties like `Exists`, `FullName`, `LastWriteTime` available
+- **Cleaner code**: No manual string parsing needed
+- **Backward compatible**: PowerShell coerces string arguments to FileInfo automatically
 
 ### Validate input early
 - Use validation attributes:
@@ -266,6 +324,52 @@ Avoid:
 [Parameter(Mandatory)]
 [string]$Name
 ```
+
+### Parameter defaults and boolean flags
+- Do not add default values to required parameters—keep them mandatory.
+- For optional boolean parameters, prefer `[switch]` over `[bool]` with a default.
+- If you use `[bool]` parameters, explicitly set default values.
+- Avoid implicit defaults like `$Force = $false` without a type.
+
+Preferred (switch parameter):
+```powershell
+function Remove-Item
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[string]$Path,
+
+		[Parameter()]
+		[switch]$Force    # No default needed; absent = $false, present = $true
+	)
+
+	# Use: Remove-Item -Path C:\temp
+	# Or:  Remove-Item -Path C:\temp -Force
+}
+```
+
+Avoid (boolean with implicit default):
+```powershell
+param
+(
+	[string]$Path,
+	$Force = $false  # Type is implicit
+)
+```
+
+Optional parameter with explicit default:
+```powershell
+[Parameter()]
+[int]$Timeout = 30   # Optional, clearly defaults to 30
+```
+
+Guidelines:
+- **Required parameters**: Always use `Mandatory = $true`, no default
+- **Boolean toggles**: Use `[switch]` to keep it simple
+- **Optional values**: Provide explicit defaults when parameters are optional
+- **Avoid**: Don't default required parameters to make them "optional"
 
 ### Keep functions focused
 - One function should do one clear task.
