@@ -371,6 +371,75 @@ Guidelines:
 - **Optional values**: Provide explicit defaults when parameters are optional
 - **Avoid**: Don't default required parameters to make them "optional"
 
+### Use parameter sets for mutually exclusive parameters
+- Use parameter sets when a function needs to accept different combinations of parameters.
+- Parameter sets enforce that only valid parameter combinations can be used together.
+- Use `ParameterSetName` to group related parameters into sets.
+- Mark parameters as `Mandatory = $true` within specific parameter sets, not globally.
+
+When to use parameter sets:
+```powershell
+# Good: Get user by name OR by ID, but not both
+function Get-User
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true, ParameterSetName = 'ByName')]
+		[string]$Name,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'ById')]
+		[int]$Id,
+
+		[Parameter()]  # Available in all sets
+		[switch]$Detailed
+	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'ByName')
+	{
+		Get-ADUser -Identity $Name
+	}
+	else
+	{
+		Get-ADUser -Filter "ObjectGUID -eq '$Id'"
+	}
+}
+
+# Usage:
+# Get-User -Name 'john'
+# Get-User -Id 12345
+# Get-User -Name 'john' -Detailed
+# Get-User -Name 'john' -Id 12345  # ERROR: Cannot use both
+```
+
+Avoid (no parameter sets - confusing and error-prone):
+```powershell
+function Get-User
+{
+	param
+	(
+		[string]$Name,
+		[int]$Id,
+		[switch]$Detailed
+	)
+
+	# Caller could pass both $Name and $Id, creating ambiguity
+	# Function must check which was provided
+	if ($Name -and $Id)
+	{
+		throw "Cannot specify both Name and Id"  # Runtime error
+	}
+
+	# No IDE help about which combinations are valid
+}
+```
+
+Benefits of parameter sets:
+- **Compile-time validation**: PowerShell prevents invalid parameter combinations
+- **Better IntelliSense**: IDEs show only valid parameters for each set
+- **Cleaner code**: Logic is clear about which parameters go together
+- **Self-documenting**: Function signature shows valid usage patterns
+
 ### Keep functions focused
 - One function should do one clear task.
 - Compose larger workflows from smaller functions.
@@ -505,10 +574,12 @@ function Get-FileSize
 
 ### Use terminating errors when appropriate
 - Set `-ErrorAction Stop` for operations you want to catch.
-- Wrap risky operations in `try/catch/finally`.
+- Wrap risky operations in `try/catch/finally` **only when you have recovery logic** in the catch or finally block.
+- If you have no catch/finally logic, use `-ErrorAction Stop` alone—it's cleaner and prevents unnecessary nesting.
 - Re-throw when the caller should decide how to handle the failure.
 - Add context when re-throwing so logs remain actionable.
 
+Only use try/catch if you have recovery logic:
 ```powershell
 try
 {
@@ -521,7 +592,27 @@ catch
 }
 ```
 
-Preferred rethrow pattern:
+Skip try/catch if there's no recovery needed:
+```powershell
+# Good: Just use -ErrorAction Stop, no try/catch needed
+$content = Get-Content -Path $filePath -ErrorAction Stop
+$data = $content | ConvertFrom-Json -ErrorAction Stop
+```
+
+Avoid (unnecessary try/catch):
+```powershell
+# Bad: No catch logic, just letting it fail anyway
+try
+{
+	$content = Get-Content -Path $filePath -ErrorAction Stop
+}
+catch
+{
+	# Empty catch or just re-throwing
+}
+```
+
+Preferred rethrow pattern (has recovery logic):
 ```powershell
 try
 {
@@ -533,6 +624,88 @@ catch
 	throw "Invoke-ExternalStep failed for '$filePath': $($err.Exception.Message)"
 }
 ```
+
+### Avoid wrapping entire scripts in try/catch
+- Do not wrap your whole script or function in a single `try/catch` block.
+- Only wrap the specific operations that might fail and need recovery.
+- Broad try/catch blocks hide errors, make debugging harder, and prevent proper error propagation.
+- Let errors bubble up unless you have a specific recovery strategy.
+
+Avoid (blanket try/catch):
+```powershell
+try
+{
+	$users = Get-ADUser -Filter * -Properties DisplayName
+	$users | ForEach-Object {
+		$group = Get-ADGroup -Identity "Group_$($_.Name)"
+		Add-ADGroupMember -Identity $group -Members $_
+	}
+	Write-Output "All users added"
+}
+catch
+{
+	Write-Error "Operation failed: $_"
+	exit 1
+}
+```
+
+Preferred (targeted try/catch):
+```powershell
+$users = @(Get-ADUser -Filter * -Properties DisplayName -ErrorAction Stop)
+
+foreach ($user in $users)
+{
+	try
+	{
+		$group = Get-ADGroup -Identity "Group_$($user.Name)" -ErrorAction Stop
+		Add-ADGroupMember -Identity $group -Members $user -ErrorAction Stop
+	}
+	catch
+	{
+		Write-Error "Failed to add user '$($user.Name)' to group: $($_.Exception.Message)"
+		continue  # Try next user instead of failing everything
+	}
+}
+
+Write-Output "User group assignment complete"
+```
+
+Best approach (let errors propagate):
+```powershell
+# For critical operations where any error should stop execution, just use -ErrorAction Stop
+# Let the error propagate naturally; the caller decides how to handle it
+
+$users = @(Get-ADUser -Filter * -Properties DisplayName -ErrorAction Stop)
+
+foreach ($user in $users)
+{
+	# If this fails, the error propagates up; the caller's try/catch handles it
+	$group = Get-ADGroup -Identity "Group_$($user.Name)" -ErrorAction Stop
+	Add-ADGroupMember -Identity $group -Members $user -ErrorAction Stop
+}
+
+Write-Output "User group assignment complete"
+```
+
+Then the caller can handle it if needed:
+```powershell
+try
+{
+	& .\Add-UsersToGroups.ps1
+}
+catch
+{
+	Write-Error "Failed to add users: $($_.Exception.Message)"
+	exit 1
+}
+```
+
+Guidelines:
+- Wrap **only the operations that might fail and need recovery**
+- Use `continue` or `return` in catch to handle errors gracefully without stopping everything
+- If an error should stop the entire script, let it propagate—don't catch it
+- Place catch blocks as close as possible to the failing code for clarity
+- **Prefer letting errors propagate** when the caller should decide what to do with them
 
 ### Output practices
 - Use pipeline output for data (not `Write-Host` for data).
