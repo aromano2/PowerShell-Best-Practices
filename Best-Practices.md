@@ -169,6 +169,57 @@ foreach ($item in $user) { }
 - Define explicit parameters and types.
 - Use `SupportsShouldProcess` for destructive actions.
 
+### Explicitly type all parameters
+- Always declare a type for every parameter in the param block.
+- Never use untyped parameters (e.g., `param($Name)` without `[string]`).
+- Explicit types enable PowerShell to coerce and validate input automatically.
+- Explicit types serve as documentation and improve code clarity.
+
+Preferred (strongly typed):
+```powershell
+function Process-Items
+{
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[string]$Path,
+
+		[Parameter(Mandatory = $true)]
+		[int]$Timeout,
+
+		[Parameter()]
+		[switch]$Force
+	)
+
+	# Types are clear: string, int, boolean (switch)
+}
+```
+
+Avoid (untyped or implicit types):
+```powershell
+function Process-Items
+{
+	param
+	(
+		$Path,           # Could be anything
+		$Timeout,        # Could be anything
+		$Force = $false  # Implicit type
+	)
+}
+```
+
+Common parameter types:
+- `[string]` - Text
+- `[int]`, `[long]`, `[double]` - Numbers
+- `[bool]` - Boolean values
+- `[switch]` - Boolean flag parameters
+- `[array]` or `[object[]]` - Collections
+- `[pscredential]` - Credentials
+- `[datetime]` - Dates and times
+- `[System.IO.FileInfo]` - File objects
+- Custom types - Classes or specific object types
+
 ### Validate input early
 - Use validation attributes:
   - `[ValidateNotNullOrEmpty()]`
