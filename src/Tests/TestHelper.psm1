@@ -54,3 +54,54 @@ function Write-PsScriptAnalyzerWarning
 
     Write-Warning -Message 'For instructions on how to run PSScriptAnalyzer on your own machine, please go to https://github.com/powershell/PSScriptAnalyzer'
 }
+
+<#
+    .SYNOPSIS
+        Adds folder(s) to the $env:PsModulePath
+
+    .PARAMETER Path
+        Folder(s) to be added to $env:PsModulePath
+
+    .PARAMETER Machine
+        If set the PSModulePath will be changed machine wide. If not set, only
+        the current session will be changed.
+
+#>
+function Add-PsModulePath
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Path,
+
+        [Parameter()]
+        [Switch]
+        $Machine
+    )
+
+    if ($null -ne $env:PSModulePath)
+    {
+        $psModulePathSplit = $env:PSModulePath -split ';'
+        # Remove the existing module path from the new PSModulePath
+        $newPSModulePathSplit = ( $psModulePathSplit | Where-Object { $_ -notin $Path } ) -join ';'
+        $psModulePath = $newPSModulePathSplit -join ';'
+    }
+    else
+    {
+        $psModulePath = $null
+    }
+
+    $addPath = $Path -join ';'
+    $newPSModulePath = "$addPath;$psModulePath"
+
+    if ($Machine.IsPresent)
+    {
+        Set-PsModulePath -Path $newPSModulePath -Machine
+    }
+    else
+    {
+        Set-PsModulePath -Path $newPSModulePath
+    }
+}

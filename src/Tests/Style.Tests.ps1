@@ -101,7 +101,6 @@ Describe 'Common Tests - Validate Script Files' -Tag 'Script' {
 }
 
 Describe 'PS Script Analyzer on PowerShell Files' {
-    Import-PSScriptAnalyzer
     $requiredPssaRuleNames = @(
         'PSAvoidDefaultValueForMandatoryParameter',
         'PSAvoidDefaultValueSwitchParameter',
@@ -149,15 +148,15 @@ Describe 'PS Script Analyzer on PowerShell Files' {
         'PSUsePSCredentialType'
     )
 
-    $ignorePssaRuleNames = @(
-        'PSDSCDscExamplesPresent',
-        'PSDSCDscTestsPresent',        
-        'PSUseShouldProcessForStateChangingFunctions',        
-        'PSUseToExportFieldsInManifest',
-        'PSUseUTF8EncodingForHelpFile',
-        'Measure-RestoreEnvironment',        
-        'ParameterAttributeArgumentNeedsToBeConstantOrScriptBlock'
-    )
+    $ignorePssaRuleNames = @()
+    #     'PSDSCDscExamplesPresent',
+    #     'PSDSCDscTestsPresent',        
+    #     'PSUseShouldProcessForStateChangingFunctions',        
+    #     'PSUseToExportFieldsInManifest',
+    #     'PSUseUTF8EncodingForHelpFile',
+    #     'Measure-RestoreEnvironment',        
+    #     'ParameterAttributeArgumentNeedsToBeConstantOrScriptBlock'
+    # )
 
     $scriptFilesFilterScript = Get-ExclusionScriptBlock -ExclusionType ScriptAnalyzer
     $scriptFiles = $fileList | Where-Object -FilterScript $scriptFilesFilterScript
