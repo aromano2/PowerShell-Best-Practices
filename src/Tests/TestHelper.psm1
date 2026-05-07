@@ -95,13 +95,28 @@ function Add-PsModulePath
 
     $addPath = $Path -join ';'
     $newPSModulePath = "$addPath;$psModulePath"
+    $setPsModulePathCommand = Get-Command -Name 'Set-PsModulePath' -ErrorAction SilentlyContinue
+
+    if ($null -ne $setPsModulePathCommand)
+    {
+        if ($Machine.IsPresent)
+        {
+            Set-PsModulePath -Path $newPSModulePath -Machine
+        }
+        else
+        {
+            Set-PsModulePath -Path $newPSModulePath
+        }
+
+        return
+    }
 
     if ($Machine.IsPresent)
     {
-        Set-PsModulePath -Path $newPSModulePath -Machine
+        [System.Environment]::SetEnvironmentVariable('PSModulePath', $newPSModulePath, [System.EnvironmentVariableTarget]::Machine)
     }
     else
     {
-        Set-PsModulePath -Path $newPSModulePath
+        $env:PSModulePath = $newPSModulePath
     }
 }
