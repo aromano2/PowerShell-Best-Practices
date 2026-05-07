@@ -121,7 +121,16 @@ Describe 'PS Script Analyzer on PowerShell Files' {
         'PSProvideCommentHelp',
         'PSReservedCmdletChar',
         'PSUseApprovedVerbs',
-        'PSReservedParams'
+        'PSReservedParams',
+        'PSUseSingularNouns',
+        'PSAvoidUsingCmdletAliases',
+        'PSUseBOMForUnicodeEncodedFile',
+        'Measure-ParameterCase',
+        'Measure-VariableCase',
+        'Measure-CmdletBindingAttribute'
+        'Measure-ParameterAttributes',
+        'Measure-Keyword',
+        'Measure-Hashtable'
     )
 
     $flaggedPssaRuleNames = @(
@@ -141,20 +150,11 @@ Describe 'PS Script Analyzer on PowerShell Files' {
 
     $ignorePssaRuleNames = @(
         'PSDSCDscExamplesPresent',
-        'PSDSCDscTestsPresent',
-        'PSAvoidUsingCmdletAliases',
-        'PSUseBOMForUnicodeEncodedFile',
-        'PSUseShouldProcessForStateChangingFunctions',
-        'PSUseSingularNouns',
+        'PSDSCDscTestsPresent',        
+        'PSUseShouldProcessForStateChangingFunctions',        
         'PSUseToExportFieldsInManifest',
         'PSUseUTF8EncodingForHelpFile',
-        'Measure-ParameterCase',
-        'Measure-VariableCase',
-        'Measure-RestoreEnvironment',
-        'Measure-CmdletBindingAttribute'
-        'Measure-ParameterAttributes',
-        'Measure-Keyword',
-        'Measure-Hashtable',
+        'Measure-RestoreEnvironment',        
         'ParameterAttributeArgumentNeedsToBeConstantOrScriptBlock'
     )
 
