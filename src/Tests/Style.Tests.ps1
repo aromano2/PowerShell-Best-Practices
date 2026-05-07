@@ -2,7 +2,8 @@ Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'TestHelper.psm1')
 
 . $PsScriptRoot\Style.Tests.Exclusions.ps1
 $rootPath = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
-$rootPath
+$dependenciesPath = Join-Path -Path $rootPath -ChildPath 'Dependencies'
+Add-PsModulePath -Path $dependenciesPath
 $srcRoot = Join-Path -Path $rootPath -ChildPath 'src'
 $dscResourcePath = Join-Path -Path $rootPath -ChildPath 'DSCResource.Tests'
 Copy-DscResourceTestsRepo -Destination $dscResourcePath
