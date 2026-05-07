@@ -5,8 +5,7 @@ $rootPath = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
 $dependenciesPath = Join-Path -Path $rootPath -ChildPath 'Dependencies'
 Add-PsModulePath -Path $dependenciesPath
 $srcRoot = Join-Path -Path $rootPath -ChildPath 'src'
-$dscResourcePath = Join-Path -Path $rootPath -ChildPath 'DSCResource.Tests'
-Copy-DscResourceTestsRepo -Destination $dscResourcePath
+$dscResourcePath = Join-Path -Path $dependenciesPath -ChildPath 'DSCResource.Tests'
 Import-Module -Name (Join-Path -Path $dscResourcePath -ChildPath 'TestHelper.psm1') -Force
 
 $fileList = Get-TextFilesList $srcRoot
