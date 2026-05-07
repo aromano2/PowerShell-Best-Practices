@@ -32,7 +32,7 @@ function Get-PsVariableList
 {
     [CmdletBinding()]
     [OutputType([array])]
-    param()
+    param ()
 
     return [array]@(
         '$', '?', '^', '_', 'Allnodes', 'Args', 'ConfirmPreference', 'ConsoleFileName', 'DebugPreference',
@@ -367,7 +367,7 @@ function Measure-VariableCase
     An abstract base class for all PowerShell abstract syntax tree (AST) nodes and is a collection of statements from the scanned script.
 
 .EXAMPLE
-    Measure-ParameterAttributes -ScriptBlockAst $ScriptBlockAst
+    Measure-ParameterAttribute -ScriptBlockAst $ScriptBlockAst
 
 .INPUTS
     [System.Management.Automation.Language.ScriptBlockAst]
@@ -380,7 +380,7 @@ function Measure-VariableCase
     https://msdn.microsoft.com/en-us/library/ms229043(v=vs.110).aspx
 #>
 
-function Measure-ParameterAttributes
+function Measure-ParameterAttribute
 {
     #Predicates are being used and are not fully a function so no need for cmdletbinding
     [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]

@@ -127,9 +127,16 @@ Describe 'PS Script Analyzer on PowerShell Files' {
         'Measure-ParameterCase',
         'Measure-VariableCase',
         'Measure-CmdletBindingAttribute'
-        'Measure-ParameterAttributes',
+        'Measure-ParameterAttribute',
         'Measure-Keyword',
-        'Measure-Hashtable'
+        'Measure-Hashtable',
+        'PSDSCDscExamplesPresent',
+        'PSDSCDscTestsPresent',
+        'PSUseShouldProcessForStateChangingFunctions',
+        'PSUseToExportFieldsInManifest',
+        'PSUseUTF8EncodingForHelpFile',
+        'Measure-RestoreEnvironment',
+        'ParameterAttributeArgumentNeedsToBeConstantOrScriptBlock'
     )
 
     $flaggedPssaRuleNames = @(
@@ -148,14 +155,6 @@ Describe 'PS Script Analyzer on PowerShell Files' {
     )
 
     $ignorePssaRuleNames = @()
-    #     'PSDSCDscExamplesPresent',
-    #     'PSDSCDscTestsPresent',        
-    #     'PSUseShouldProcessForStateChangingFunctions',        
-    #     'PSUseToExportFieldsInManifest',
-    #     'PSUseUTF8EncodingForHelpFile',
-    #     'Measure-RestoreEnvironment',        
-    #     'ParameterAttributeArgumentNeedsToBeConstantOrScriptBlock'
-    # )
 
     $scriptFilesFilterScript = Get-ExclusionScriptBlock -ExclusionType ScriptAnalyzer
     $scriptFiles = $fileList | Where-Object -FilterScript $scriptFilesFilterScript
