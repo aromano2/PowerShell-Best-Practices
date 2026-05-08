@@ -1,6 +1,6 @@
-$Exclusions = @{
+$exclusions = @{
     FileFormatting      = {
-        $_.FullName -notlike '*\.vs*'
+        $_.FullName -notlike '*\.vs*' -and $_.FullName -notlike '*\.git*' -and $_.FullName -notlike '*\.vscode*' -and $_.FullName -notlike '*\Tests\*'
     }
     ValidateScriptFiles = {
         $_.Extension -eq '.ps1'
@@ -23,5 +23,5 @@ function Get-ExclusionScriptBlock
         $ExclusionType
     )
 
-    return $Exclusions.$ExclusionType
+    return $exclusions.$ExclusionType
 }

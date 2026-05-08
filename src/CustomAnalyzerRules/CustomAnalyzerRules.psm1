@@ -399,7 +399,7 @@ function Measure-ParameterAttribute
             $script:diagnosticRecord['RuleName'] = $PSCmdlet.MyInvocation.InvocationName
 
             #region Define predicates to find ASTs.
-            [ScriptBlock]$checkParameterAttributesNamed = {
+            [ScriptBlock]$checkParameterAttributes = {
                 param
                 (
                     [Parameter(Mandatory = $true)]
@@ -411,29 +411,32 @@ function Measure-ParameterAttribute
 
                 if ($Ast -is [System.Management.Automation.Language.ParameterAst])
                 {
-                    if ($Ast.Attributes.NamedArguments.ArgumentName -cnotmatch '^[A-Z]')
-                    {
-                        $returnValue = $true
+                    $parameterAttributes = $Ast.Attributes | Where-Object -FilterScript {
+                        $_.TypeName.Name -ieq 'Parameter'
                     }
-                }
-                return $returnValue
-            }
 
-            [ScriptBlock]$checkParameterAttributesTypeName = {
-                param
-                (
-                    [Parameter(Mandatory = $true)]
-                    [ValidateNotNullOrEmpty()]
-                    [System.Management.Automation.Language.Ast]
-                    $Ast
-                )
-                [bool]$returnValue = $false
-
-                if ($Ast -is [System.Management.Automation.Language.ParameterAst])
-                {
-                    if ($Ast.Attributes.TypeName.Name -cnotmatch '^[A-Z]')
+                    foreach ($parameterAttribute in $parameterAttributes)
                     {
-                        $returnValue = $true
+                        # Validate explicit [Parameter(...)] casing only.
+                        if ($parameterAttribute.TypeName.Name -cne 'Parameter')
+                        {
+                            $returnValue = $true
+                            break
+                        }
+
+                        foreach ($namedArgument in $parameterAttribute.NamedArguments)
+                        {
+                            if ($namedArgument.ArgumentName -cnotmatch '^[A-Z]')
+                            {
+                                $returnValue = $true
+                                break
+                            }
+                        }
+
+                        if ($returnValue)
+                        {
+                            break
+                        }
                     }
                 }
                 return $returnValue
@@ -443,25 +446,13 @@ function Measure-ParameterAttribute
             #region Finds ASTs that match the predicates.
             if ($null -ne $ScriptBlockAst.ParamBlock -or $ScriptBlockAst.EndBlock -notcontains 'param' -and (-not($ScriptBlockAst.Parent)))
             {
-                [System.Management.Automation.Language.Ast[]]$parameterAttributesNamedViolations = $ScriptBlockAst.FindAll($checkParameterAttributesNamed, $true)
-                [System.Management.Automation.Language.Ast[]]$parameterAttributesTypeNameViolations = $ScriptBlockAst.FindAll($checkParameterAttributesTypeName, $true)
-
-                if ($parameterAttributesNamedViolations.Count -ne 0)
+                [System.Management.Automation.Language.Ast[]]$parameterAttributeViolations = $ScriptBlockAst.FindAll($checkParameterAttributes, $true)
+                if ($parameterAttributeViolations.Count -ne 0)
                 {
-                    foreach ($parameterAttributesNamedViolation in $parameterAttributesNamedViolations)
+                    foreach ($parameterAttributeViolation in $parameterAttributeViolations)
                     {
                         $script:diagnosticRecord['Message'] = $localizedData.ParameterAttributeNotPascalCase
-                        $script:diagnosticRecord['Extent'] = $parameterAttributesNamedViolation.Extent
-                        $script:diagnosticRecord -as $script:diagnosticRecordType
-                    }
-                }
-
-                if ($parameterAttributesTypeNameViolations.Count -ne 0)
-                {
-                    foreach ($parameterAttributesTypeNameViolation in $parameterAttributesTypeNameViolations)
-                    {
-                        $script:diagnosticRecord['Message'] = $localizedData.ParameterAttributeNotPascalCase
-                        $script:diagnosticRecord['Extent'] = $parameterAttributesTypeNameViolation.Extent
+                        $script:diagnosticRecord['Extent'] = $parameterAttributeViolation.Extent
                         $script:diagnosticRecord -as $script:diagnosticRecordType
                     }
                 }

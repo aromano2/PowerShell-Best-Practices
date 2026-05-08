@@ -33,7 +33,7 @@ function Write-PsScriptAnalyzerWarning
     (
         [Parameter(Mandatory = $true)]
         [object[]]
-        $PssaRuleOutput,
+        $PSSARuleOutput,
 
         [Parameter(Mandatory = $true)]
         [string]
